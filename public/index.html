@@ -116,7 +116,7 @@ function createPath(strength) {
 function onResize() {
   if (path2)
     path2.remove();
-  size = view.bounds.size * [2, 1];
+  size = view.bounds.size * [2, 0.8];
   path2 = createPath(0.1);
 }
 
@@ -181,13 +181,14 @@ function onMouseDown(event){
 
 		<h1 id="title">drü</h1>
 
-		<h3 id="menu">
-        	<a href = "draw.html"> Draw</a>
-<!--        	<a href = "#">About</a> -->
-    	</h3>
+		
 
 		<canvas id="myCanvas" resize>
 		</canvas>
+    <h3 id="menu">
+          <a href = "draw.html"> Draw</a>
+<!--          <a href = "#">About</a> -->
+      </h3>
 		<!-- preview element 
 		/
             <div class="preview"></div>
