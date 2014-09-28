@@ -74,7 +74,7 @@ function changeCenter(oldCenter, deltaX, deltaY, factor) {
       });
       
 
-$.getJSON( "http://dkyk.eyvindniklasson.se/api/strokes/all", function( data ) {
+$.getJSON( "api/strokes/all", function( data ) {
   $.each( data.rows, function(index, stroke) {
   	pathupdate = new Path();
     pathupdate.importJSON(stroke.value);
@@ -87,7 +87,7 @@ $.getJSON( "http://dkyk.eyvindniklasson.se/api/strokes/all", function( data ) {
 });
 
 setInterval(function(){
-    $.getJSON("http://dkyk.eyvindniklasson.se/api/strokes/since/" + (lasttime+1), function(data){
+    $.getJSON("api/strokes/since/" + (lasttime+1), function(data){
 		$.each( data.rows, function(index, stroke) {
   			pathupdate = new Path();
     		pathupdate.importJSON(stroke.value);
@@ -129,7 +129,7 @@ function onMouseDrag(event) {
 		path.simplify(10);
 
 		$.ajax({
-			url: 'http://dkyk.eyvindniklasson.se/api/strokes/new',
+			url: 'api/strokes/new',
 			type: 'PUT',
 			 //dataType: "json",
 	    contentType: "application/json; charset=utf-8",
@@ -160,7 +160,7 @@ function onMouseUp(event) {
 	path.simplify(10);
 
 	$.ajax({
-		url: 'http://dkyk.eyvindniklasson.se/api/strokes/new',
+		url: 'api/strokes/new',
 		type: 'PUT',
 		 //dataType: "json",
     contentType: "application/json; charset=utf-8",
