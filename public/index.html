@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html  lang="en">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<title>OurWall</title>
+		<link rel="stylesheet" type="text/css" href="style/main_style.css">
+
+		<script src="scripts/jquery.js" type="text/javascript"></script>
+  		<!-- <script src="scripts/colorpicker.js" type="text/javascript"></script> -->
+
+		<script type="text/javascript" src="scripts/js/paper.js"></script>
+		<!-- Define inlined PaperScript associate it with myCanvas -->
+
+		<script type="text/paperscript" canvas="myCanvas">
+
+			/*
+			var path;
+
+			function onMouseDown(event) {
+
+				// If we produced a path before, deselect it:
+				if (path) {
+					path.selected = false;
+				}
+
+				// Create a new path and set its stroke color to black:
+				path = new Path({
+					segments: [event.point],
+					strokeColor: 'red'//cw.color()
+				});
+
+				path.strokeWidth = 2;
+			}
+
+			// While the user drags the mouse, points are added to the path
+			// at the position of the mouse:
+			function onMouseDrag(event) {
+				path.add(event.point);
+				path.smooth();
+			}
+
+			// When the mouse is released, we simplify the path:
+			function onMouseUp(event) {
+
+				// When the mouse is released, simplify it:
+				path.simplify(10);
+				console.log ( "JSON: " + path.exportJSON()); 
+			}
+
+			function changeColor(co){
+				path.strokeColor= co; 
+			}
+
+			*/
+// Code ported to Paper.js from http://the389.com/9/1/
+// with permission.
+
+var values = {
+  friction: 0.9,
+  timeStep: 0.01,
+  amount: 200,
+  mass: 10,
+  count: 5,
+  updating: true
+};
+values.invMass = 1 / values.mass;
+
+var path2, springs;
+var size = view.size * [1.2, 1];
+
+var Spring = function(a, b, strength, restLength) {
+  this.a = a;
+  this.b = b;
+  this.restLength = restLength || 10;
+  this.strength = strength ? strength : 0.55;
+  this.mamb = values.invMass * values.invMass;
+};
+
+Spring.prototype.update = function() {
+  var delta = this.b - this.a;
+  var dist = delta.length;
+  var normDistStrength = (dist - this.restLength) /
+      (dist * this.mamb) * this.strength;
+  delta.y *= normDistStrength * values.invMass * 0.2;
+  if (!this.a.fixed)
+    this.a.y += delta.y;
+  if (!this.b.fixed)
+    this.b.y -= delta.y;
+};
+
+
+function createPath(strength) {
+  var path2 = new Path({
+    fillColor: 'black'
+  });
+  springs = [];
+  for (var i = 0; i <= values.amount; i++) {
+    var segment = path2.add(new Point(i / values.amount, 0.5) * size);
+    var point = segment.point;
+    if (i == 0 || i == values.amount)
+      point.y += size.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values.amount - 2;
+    if (i > 0) {
+      var spring = new Spring(segment.previous.point, point, strength);
+      springs.push(spring);
+    }
+  }
+  path2.position.x -= size.width / 4;
+  return path2;
+}
+
+function onResize() {
+  if (path2)
+    path2.remove();
+  size = view.bounds.size * [2, 1];
+  path2 = createPath(0.1);
+}
+
+function onMouseMove(event) {
+  var location = path2.getNearestLocation(event.point);
+  var segment = location.segment;
+  var point = segment.point;
+
+  if (!point.fixed && location.distance < size.height / 4) {
+    var y = event.point.y;
+    point.y += (y - point.y) / 6;
+    if (segment.previous && !segment.previous.fixed) {
+      var previous = segment.previous.point;
+      previous.y += (y - previous.y) / 24;
+    }
+    if (segment.next && !segment.next.fixed) {
+      var next = segment.next.point;
+      next.y += (y - next.y) / 24;
+    }
+  }
+}
+
+function onFrame(event) {
+  updateWave(path2);
+}
+
+function updateWave(path) {
+  var force = 1 - values.friction * values.timeStep * values.timeStep;
+  for (var i = 0, l = path.segments.length; i < l; i++) {
+    var point = path.segments[i].point;
+    var dy = (point.y - point.py) * force;
+    point.py = point.y;
+    point.y = Math.max(point.y + dy, 0);
+  }
+
+  for (var j = 0, l = springs.length; j < l; j++) {
+    springs[j].update();
+  }
+  path2.smooth();
+}
+
+function onKeyDown(event) {
+  if (event.key == 'space') {
+    path2.fullySelected = !path2.fullySelected;
+    path2.fillColor = path2.fullySelected ? null : 'black';
+  }
+}
+
+function onMouseDown(event){
+}
+
+
+
+
+		</script>
+
+	</head>
+
+
+	<body id="IndexBody">
+
+
+		<h1 id="title">drü</h1>
+
+		<h3 id="menu">
+        	<a href = "draw.html"> Draw</a>
+<!--        	<a href = "#">About</a> -->
+    	</h3>
+
+		<canvas id="myCanvas" resize>
+		</canvas>
+		<!-- preview element 
+		/
+            <div class="preview"></div>
+
+             colorpicker element 
+            <div class="colorpicker" style="display:none">
+                <canvas id="picker" var="4" width="300" height="300"></canvas>
+
+                <div class="controls">
+                    <div><label>R</label> <input type="text" id="rVal" /></div>
+                    <div><label>G</label> <input type="text" id="gVal" /></div>
+                    <div><label>B</label> <input type="text" id="bVal" /></div>
+                    <div><label>RGB</label> <input type="text" id="rgbVal" /></div>
+                    <div><label>HEX</label> <input type="text" id="hexVal" /></div>
+                </div>
+            </div>
+
+			-->
+
+		<footer id= "indexFooter">
+
+		</footer>
+
+	</body>
+</html>

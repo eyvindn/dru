@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Load the Paper.js library -->
+<style>
+ #myCanvas {
+
+      }
+</style>
+<script type="text/javascript" src="js/paper-full.js"></script>
+<!-- Define inlined PaperScript associate it with myCanvas -->
+
+<script src="http://code.jquery.com/jquery-latest.min.js"
+        type="text/javascript"></script>
+        <script src="js/jquery.mousewheel.min.js"
+        type="text/javascript"></script>
+
+
+<script type="text/paperscript" canvas="myCanvas">
+
+var path;
+var pathupdate;
+var lasttime = 0;
+view.center = [0,0];
+
+//canvas.style.width = 320;
+//canvas.style.height = 480;
+
+//view.viewSize = [400, 400];
+//view.size = [400, 400];
+//canvas.style.width = 640 + 'px';
+//canvas.style.height = 960 + 'px';
+
+        // now scale the context to counter
+        // the fact that we've manually scaled
+        // our canvas element
+//context.scale(0.5, 0.5);
+
+
+  
+
+function changeZoom(oldZoom, delta) {
+        var factor;
+        factor = 1.05;
+        if (delta < 0) {
+          return oldZoom * factor;
+        }
+        if (delta > 0) {
+          return oldZoom / factor;
+        }
+        return oldZoom;
+      }
+      
+function changeCenter(oldCenter, deltaX, deltaY, factor) {
+        var offset;
+        offset = new paper.Point(deltaX, -deltaY);
+        offset = offset.multiply(factor);
+        return oldCenter.add(offset);
+      }
+
+
+
+
+ $("#myCanvas").mousewheel(function(event) {
+
+        if (event.altKey) {
+          view.zoom = changeZoom(view.zoom, event.deltaY);
+          return event.preventDefault();
+        } else {
+        	 view.center = changeCenter(view.center, event.deltaX, event.deltaY, event.deltaFactor);
+
+          return event.preventDefault();
+        }
+      });
+      
+
+$.getJSON( "http://dkyk.eyvindniklasson.se/api/strokes/all", function( data ) {
+  $.each( data.rows, function(index, stroke) {
+  	pathupdate = new Path();
+    pathupdate.importJSON(stroke.value);
+    if(lasttime < parseInt(stroke.key)) lasttime = parseInt(stroke.key);
+    pathupdate.selected = false;
+    pathupdate.rasterize();
+    pathupdate = null;
+    view.update();
+  });
+});
+
+setInterval(function(){
+    $.getJSON("http://dkyk.eyvindniklasson.se/api/strokes/since/" + (lasttime+1), function(data){
+		$.each( data.rows, function(index, stroke) {
+  			pathupdate = new Path();
+    		pathupdate.importJSON(stroke.value);
+    		if(lasttime < stroke.key) lasttime = stroke.key;
+    		pathupdate.selected = false;
+    		pathupdate.rasterize();
+    		pathupdate = null;
+    		view.update();
+  		});
+    });
+}, 1000);
+
+
+/*
+var textItem = new PointText({
+	content: 'Click and drag to draw a line.',
+	point: new Point(20, 30),
+	fillColor: 'black',
+});
+*/
+
+function onMouseDown(event) {
+
+	// Create a new path and set its stroke color to black:
+	path = new Path({
+		segments: [event.point],
+		strokeColor: 'black',
+		// Select the path, so we can see its segment points:
+		strokeWidth: 5,
+		fullySelected: false
+	});
+}
+
+// While the user drags the mouse, points are added to the path
+// at the position of the mouse:
+function onMouseDrag(event) {
+	path.add(event.point);
+	if(path.length > 3000){
+		path.simplify(10);
+
+		$.ajax({
+			url: 'http://dkyk.eyvindniklasson.se/api/strokes/new',
+			type: 'PUT',
+			 //dataType: "json",
+	    contentType: "application/json; charset=utf-8",
+	    	data: path.exportJSON(), // Some data e.g. Valid JSON as a string
+			success: function(response) {
+	 		}	
+		});
+
+		// Select the path, so we can see its segments:
+		path.fullySelected = false;
+		path.rasterize();
+
+		path = new Path({
+			segments: [event.point],
+			strokeColor: 'black',
+			// Select the path, so we can see its segment points:
+			strokeWidth: 5,
+			fullySelected: false
+		});
+	}
+	
+}
+
+// When the mouse is released, we simplify the path:
+function onMouseUp(event) {
+
+	// When the mouse is released, simplify it:
+	path.simplify(10);
+
+	$.ajax({
+		url: 'http://dkyk.eyvindniklasson.se/api/strokes/new',
+		type: 'PUT',
+		 //dataType: "json",
+    contentType: "application/json; charset=utf-8",
+    	data: path.exportJSON(), // Some data e.g. Valid JSON as a string
+		success: function(response) {
+ 		}	
+	});
+
+	// Select the path, so we can see its segments:
+	path.fullySelected = false;
+	path.rasterize();
+	path = null;
+}
+</script>
+</head>
+<body>
+	<canvas id="myCanvas" resize="true" hidpi="false"></canvas>
+</body>
+</html>
